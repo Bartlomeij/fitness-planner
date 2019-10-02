@@ -1,0 +1,50 @@
+version: "3.2"
+services:
+  fitness:
+    build: ./.docker
+    container_name: fitness
+    volumes:
+      - .:/application:delegated
+      - ./.docker:/root/.docker:delegated
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.frontend.rule=HostRegexp:fitness.local"
+      - "traefik.port=80"
+    expose:
+      - 80
+    networks:
+      fitness:
+        aliases:
+          - fitness.local
+  mysql:
+    image: mysql:5.7
+    container_name: fitness_mysql
+    volumes:
+      - ./var/mysql:/var/lib/mysql
+      - ./.docker/database.sql:/docker-entrypoint-initdb.d/databases.sql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_USER=fitness
+      - MYSQL_PASSWORD=secret
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - fitness
+  traefik:
+    container_name: fitness_traefik
+    image: traefik:1.7
+    command: "--configfile=/etc/traefik/traefik.toml"
+    volumes:
+      - ./traefik.toml:/etc/traefik/traefik.toml
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 80:80
+    networks:
+      - fitness
+
+networks:
+  fitness:

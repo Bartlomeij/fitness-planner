@@ -1,0 +1,4 @@
+debug = true
+
+[docker]
+watch = true
